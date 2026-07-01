@@ -115,6 +115,17 @@ The gain is modest relative to the theoretical 25% (3-row vs 4-row critical path
 
 [VERSION_RESULT] version=3 file=baseline_matmul_ttl_v3.py baseline_us=34656.4 final_us=33872.2 speedup_pct=2.3 summary=redistributed whole output rows non-uniformly across all 56 hardware cores instead of 32 (16 nodes get 3 rows, 40 get 2), preserving v2&#x27;s per-row x-caching DMA pattern; reached hardware core-count ceiling; PERF SUMMARY tool was unreliable (profiler buffer overflow) so used host-side wall-clock timing instead
 </pre></details></td>
+        </tr>
+        <tr class="failed">
+          <td>v4</td>
+          <td>v4 (no [VERSION_RESULT] line found)</td>
+          <td>N/A</td>
+          <td>N/A</td>
+          <td>N/A</td>
+          <td>N/A</td>
+          <td>Run failed or did not complete -- see raw log below</td>
+          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
+</pre></details></td>
         </tr></tbody>
   </table>
 </body>
