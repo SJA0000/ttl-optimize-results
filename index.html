@@ -21,10 +21,10 @@
   <h1>ttl-optimize iteration report</h1>
   <div class="meta">Kernel: /root/nanoGPT/baseline_matmul_ttl.py<br>Log dir: /root/nanoGPT/optimize-logs/20260701_120212</div>
   <div class="chart-box"><svg viewBox="0 0 760 320" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
-  <line x1="55" y1="280.0" x2="740" y2="280.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="284.0" font-size="11" fill="#666" text-anchor="end">0%</text><line x1="55" y1="215.0" x2="740" y2="215.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="219.0" font-size="11" fill="#666" text-anchor="end">0%</text><line x1="55" y1="150.0" x2="740" y2="150.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="154.0" font-size="11" fill="#666" text-anchor="end">1%</text><line x1="55" y1="85.0" x2="740" y2="85.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="89.0" font-size="11" fill="#666" text-anchor="end">1%</text><line x1="55" y1="20.0" x2="740" y2="20.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="24.0" font-size="11" fill="#666" text-anchor="end">1%</text><line x1="55" y1="280.0" x2="740" y2="280.0" stroke="#9ca3af" stroke-width="1.5"/>
-  <polyline points="55.0,280.0" fill="none" stroke="#2563eb" stroke-width="2.5"/>
-  <circle cx="55.0" cy="280.0" r="4" fill="#2563eb"/>
-  <text x="55.0" y="270.0" font-size="12" fill="#1f2937" text-anchor="middle">0.0%</text><text x="55.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v1</text>
+  <line x1="55" y1="280.0" x2="740" y2="280.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="284.0" font-size="11" fill="#666" text-anchor="end">0%</text><line x1="55" y1="215.0" x2="740" y2="215.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="219.0" font-size="11" fill="#666" text-anchor="end">3%</text><line x1="55" y1="150.0" x2="740" y2="150.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="154.0" font-size="11" fill="#666" text-anchor="end">6%</text><line x1="55" y1="85.0" x2="740" y2="85.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="89.0" font-size="11" fill="#666" text-anchor="end">8%</text><line x1="55" y1="20.0" x2="740" y2="20.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="24.0" font-size="11" fill="#666" text-anchor="end">11%</text><line x1="55" y1="280.0" x2="740" y2="280.0" stroke="#9ca3af" stroke-width="1.5"/>
+  <polyline points="55.0,280.0 740.0,53.9" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+  <circle cx="55.0" cy="280.0" r="4" fill="#2563eb"/><circle cx="740.0" cy="53.9" r="4" fill="#2563eb"/>
+  <text x="55.0" y="270.0" font-size="12" fill="#1f2937" text-anchor="middle">0.0%</text><text x="55.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v1</text><text x="740.0" y="43.9" font-size="12" fill="#1f2937" text-anchor="middle">9.9%</text><text x="740.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v2</text>
   <text x="55" y="14" font-size="12" fill="#6b7280">Cumulative speedup vs. original baseline (%)</text>
 </svg></div>
   <table>
@@ -56,6 +56,33 @@
 Given the profiling harness doesn&#x27;t respond to kernel changes, further iteration attempts wouldn&#x27;t produce additional verifiable signal, so I stopped after this one change rather than layering unmeasurable &quot;optimizations.&quot;
 
 [VERSION_RESULT] version=1 file=baseline_matmul_ttl_v1.py baseline_us=275.1 final_us=275.1 speedup_pct=0.0 summary=Restructured reader/compute loop nesting (outer over 4 row-blocks, inner over 32 col-groups) to cache x_blk across col-group iterations instead of re-reading it every iteration, eliminating ~32x redundant DRAM reads of x; correctness verified on HW but perf harness in this sandbox returned identical canned metrics for both baseline and modified/differently-gridded kernels, so wall-time improvement could not be empirically confirmed
+</pre></details></td>
+        </tr>
+        <tr>
+          <td>v2</td>
+          <td>baseline_matmul_ttl_v2.py</td>
+          <td>275</td>
+          <td>248</td>
+          <td>+9.9%</td>
+          <td>+9.9%</td>
+          <td>identified kernel as 98% compute-bound via auto-profile roofline (not DRAM-bound as assumed); W_BATCH halving + w_dfb double-buffering was a no-op (confirmed buffering wasn&#x27;t the bottleneck); widened W_BATCH 4-&gt;8 with K split into two 64-tile halves (elementwise-add accumulate) to double output tiles per matmul call, reducing measured compute cycles ~9.9% (162.06M-&gt;146.09M); note: environment&#x27;s top-level --perf duration/grid summary was found stale/cached (proven via grid=1x1 test), so final_us is estimated from the verified auto-profile compute-cycle delta rather than a fresh top-line wall-clock reading</td>
+          <td><details><summary>raw log</summary><pre>Final kernel is correct. Here&#x27;s the summary.
+
+## Summary
+
+**Output file:** `/root/nanoGPT/baseline_matmul_ttl_v2.py`
+
+**Baseline:** 275.1 us (275,091 cycles), grid 8×4 (32 nodes), 40 MB DRAM read, 153.4 GB/s — confirmed correct and reproduced identically across two independent clean hardware runs.
+
+**Bottleneck analysis:** A `--auto-profile --hw` per-line breakdown revealed the kernel is **98% compute-bound**, not DRAM-bound as its docstring assumed. The `x_blk @ w_blk` matmul (full K=128 walk per call, W_BATCH=4 output tiles per call) dominates at ~202k cycles/call on the Math/Pack engines, while the reader thread finishes its DMA work well before the kernel ends.
+
+**Attempts:**
+1. Halve W_BATCH (4→2) to enable double-buffering on `w_dfb` — theoretically addresses memory latency, but since the kernel is compute-bound this was a no-op by design (confirmed the DFB/buffering angle wasn&#x27;t the lever).
+2. **K-split + wider W_BATCH** (W_BATCH 4→8, K split into two 64-tile halves accumulated via elementwise add) — doubles output tiles produced per matmul call, targeting fewer/cheaper K-walks. Verified correct on hardware (max diff 0.0625, same tolerance as baseline). Per-line auto-profile shows genuine improvement: **compute cycles 162.06M → 146.09M (~9.9% reduction)**.
+
+**Important caveat:** I discovered the environment&#x27;s top-level `--perf --hw` wall-time/grid summary is stale/cached — proven by setting `grid=(1,1)` (single core) and still seeing the old `grid: 8x4`/duration numbers verbatim, even after clearing `~/.cache/tt-metal-cache`. The detailed per-line auto-profiler data *does* correctly reflect each kernel&#x27;s real source (confirmed via matching line numbers/code), so I used its `Compute:` roofline cycle count as the trustworthy signal instead, and scaled the baseline wall time proportionally (kernel is 98% compute-bound, so wall time should track compute cycles closely). I&#x27;d flag this stale-perf-summary issue to whoever maintains the test harness before trusting future `--perf --hw` wall-time numbers in this environment without cross-checking against `--auto-profile`.
+
+[VERSION_RESULT] version=2 file=baseline_matmul_ttl_v2.py baseline_us=275.1 final_us=248.0 speedup_pct=9.9 summary=identified kernel as 98% compute-bound via auto-profile roofline (not DRAM-bound as assumed); W_BATCH halving + w_dfb double-buffering was a no-op (confirmed buffering wasn&#x27;t the bottleneck); widened W_BATCH 4-&gt;8 with K split into two 64-tile halves (elementwise-add accumulate) to double output tiles per matmul call, reducing measured compute cycles ~9.9% (162.06M-&gt;146.09M); note: environment&#x27;s top-level --perf duration/grid summary was found stale/cached (proven via grid=1x1 test), so final_us is estimated from the verified auto-profile compute-cycle delta rather than a fresh top-line wall-clock reading
 </pre></details></td>
         </tr></tbody>
   </table>
