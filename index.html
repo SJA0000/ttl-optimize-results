@@ -19,14 +19,8 @@
 </head>
 <body>
   <h1>ttl-optimize iteration report</h1>
-  <div class="meta">Kernel: /root/nanoGPT/baseline_matmul_ttl.py<br>Log dir: /root/nanoGPT/optimize-logs/20260701_120212</div>
-  <div class="chart-box"><svg viewBox="0 0 760 320" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
-  <line x1="55" y1="280.0" x2="740" y2="280.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="284.0" font-size="11" fill="#666" text-anchor="end">-12213%</text><line x1="55" y1="215.0" x2="740" y2="215.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="219.0" font-size="11" fill="#666" text-anchor="end">-9157%</text><line x1="55" y1="150.0" x2="740" y2="150.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="154.0" font-size="11" fill="#666" text-anchor="end">-6101%</text><line x1="55" y1="85.0" x2="740" y2="85.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="89.0" font-size="11" fill="#666" text-anchor="end">-3045%</text><line x1="55" y1="20.0" x2="740" y2="20.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="24.0" font-size="11" fill="#666" text-anchor="end">11%</text><line x1="55" y1="20.2" x2="740" y2="20.2" stroke="#9ca3af" stroke-width="1.5"/>
-  <polyline points="55.0,20.2 397.5,20.0 740.0,280.0" fill="none" stroke="#2563eb" stroke-width="2.5"/>
-  <circle cx="55.0" cy="20.2" r="4" fill="#2563eb"/><circle cx="397.5" cy="20.0" r="4" fill="#2563eb"/><circle cx="740.0" cy="280.0" r="4" fill="#2563eb"/>
-  <text x="55.0" y="10.2" font-size="12" fill="#1f2937" text-anchor="middle">0.0%</text><text x="55.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v1</text><text x="397.5" y="10.0" font-size="12" fill="#1f2937" text-anchor="middle">9.9%</text><text x="397.5" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v2</text><text x="740.0" y="270.0" font-size="12" fill="#1f2937" text-anchor="middle">-12212.7%</text><text x="740.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v3</text>
-  <text x="55" y="14" font-size="12" fill="#6b7280">Cumulative speedup vs. original baseline (%)</text>
-</svg></div>
+  <div class="meta">Kernel: /root/test_gemm/ttlang/gemm_gull.py<br>Log dir: /root/test_gemm/ttlang/optimize-logs/20260702_073518</div>
+  <div class="chart-box"><p>No successful versions to chart yet.</p></div>
   <table>
     <thead>
       <tr>
@@ -35,184 +29,22 @@
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="failed">
           <td>v1</td>
-          <td>baseline_matmul_ttl_v1.py</td>
-          <td>275</td>
-          <td>275</td>
-          <td>+0.0%</td>
-          <td>+0.0%</td>
-          <td>Restructured reader/compute loop nesting (outer over 4 row-blocks, inner over 32 col-groups) to cache x_blk across col-group iterations instead of re-reading it every iteration, eliminating ~32x redundant DRAM reads of x; correctness verified on HW but perf harness in this sandbox returned identical canned metrics for both baseline and modified/differently-gridded kernels, so wall-time improvement could not be empirically confirmed</td>
-          <td><details><summary>raw log</summary><pre>## Summary
-
-**Baseline verified correct** (PASS, max abs diff 0.0625) with wall time 275.1 us, DRAM read 40.0 MB / write 256 KB, grid (8,4)=32 nodes.
-
-**Bottleneck found:** the reader re-issued a full 256 KB `x_blk` DMA read on *every* iteration, even though `out_r` (and thus `x_blk`) only changes once every `N_GROUPS=32` iterations — a 32x redundant re-read of the same row-strip of `x`.
-
-**Change made:** restructured `mm_reader`/`mm_compute` to loop over `ROWS_PER_NODE=4` outer row-blocks and `N_GROUPS=32` inner column-groups, issuing the x-read once per outer iteration and reusing `x_blk` (kept in scope via nested `with`) across the 32 inner iterations instead of re-fetching it each time. `w_dfb`/`out_dfb` traffic and the writer are unchanged. Verified correct on `--hw` (PASS, identical numerical output to baseline).
-
-**Important caveat — could not empirically confirm wall-time impact:** I ran `--perf --hw` on the optimized kernel and got byte-identical metrics to baseline (275,091 cycles, 40.0 MB DRAM read, 20480 transfers). To rule out a stale log, I confirmed the remote file actually contained my new code (`grep` showed the restructured loop), and then ran a diagnostic with a completely different grid (4,4)=16 nodes instead of (8,4)=32 — which changes ITERS, total DRAM volume, and node count — and it returned the *exact same* 275,091-cycle result. This indicates the `--perf --hw` harness in this sandbox is returning a fixed/canned report rather than measuring the actual kernel run, so I cannot empirically demonstrate a wall-time delta here. I&#x27;m flagging this rather than fabricating a number — the code change itself is a real, verified-correct DRAM-traffic reduction (cuts redundant x reads by ~32x), but its performance impact can&#x27;t be measured in this environment.
-
-Given the profiling harness doesn&#x27;t respond to kernel changes, further iteration attempts wouldn&#x27;t produce additional verifiable signal, so I stopped after this one change rather than layering unmeasurable &quot;optimizations.&quot;
-
-[VERSION_RESULT] version=1 file=baseline_matmul_ttl_v1.py baseline_us=275.1 final_us=275.1 speedup_pct=0.0 summary=Restructured reader/compute loop nesting (outer over 4 row-blocks, inner over 32 col-groups) to cache x_blk across col-group iterations instead of re-reading it every iteration, eliminating ~32x redundant DRAM reads of x; correctness verified on HW but perf harness in this sandbox returned identical canned metrics for both baseline and modified/differently-gridded kernels, so wall-time improvement could not be empirically confirmed
-</pre></details></td>
-        </tr>
-        <tr>
-          <td>v2</td>
-          <td>baseline_matmul_ttl_v2.py</td>
-          <td>275</td>
-          <td>248</td>
-          <td>+9.9%</td>
-          <td>+9.9%</td>
-          <td>identified kernel as 98% compute-bound via auto-profile roofline (not DRAM-bound as assumed); W_BATCH halving + w_dfb double-buffering was a no-op (confirmed buffering wasn&#x27;t the bottleneck); widened W_BATCH 4-&gt;8 with K split into two 64-tile halves (elementwise-add accumulate) to double output tiles per matmul call, reducing measured compute cycles ~9.9% (162.06M-&gt;146.09M); note: environment&#x27;s top-level --perf duration/grid summary was found stale/cached (proven via grid=1x1 test), so final_us is estimated from the verified auto-profile compute-cycle delta rather than a fresh top-line wall-clock reading</td>
-          <td><details><summary>raw log</summary><pre>Final kernel is correct. Here&#x27;s the summary.
-
-## Summary
-
-**Output file:** `/root/nanoGPT/baseline_matmul_ttl_v2.py`
-
-**Baseline:** 275.1 us (275,091 cycles), grid 8×4 (32 nodes), 40 MB DRAM read, 153.4 GB/s — confirmed correct and reproduced identically across two independent clean hardware runs.
-
-**Bottleneck analysis:** A `--auto-profile --hw` per-line breakdown revealed the kernel is **98% compute-bound**, not DRAM-bound as its docstring assumed. The `x_blk @ w_blk` matmul (full K=128 walk per call, W_BATCH=4 output tiles per call) dominates at ~202k cycles/call on the Math/Pack engines, while the reader thread finishes its DMA work well before the kernel ends.
-
-**Attempts:**
-1. Halve W_BATCH (4→2) to enable double-buffering on `w_dfb` — theoretically addresses memory latency, but since the kernel is compute-bound this was a no-op by design (confirmed the DFB/buffering angle wasn&#x27;t the lever).
-2. **K-split + wider W_BATCH** (W_BATCH 4→8, K split into two 64-tile halves accumulated via elementwise add) — doubles output tiles produced per matmul call, targeting fewer/cheaper K-walks. Verified correct on hardware (max diff 0.0625, same tolerance as baseline). Per-line auto-profile shows genuine improvement: **compute cycles 162.06M → 146.09M (~9.9% reduction)**.
-
-**Important caveat:** I discovered the environment&#x27;s top-level `--perf --hw` wall-time/grid summary is stale/cached — proven by setting `grid=(1,1)` (single core) and still seeing the old `grid: 8x4`/duration numbers verbatim, even after clearing `~/.cache/tt-metal-cache`. The detailed per-line auto-profiler data *does* correctly reflect each kernel&#x27;s real source (confirmed via matching line numbers/code), so I used its `Compute:` roofline cycle count as the trustworthy signal instead, and scaled the baseline wall time proportionally (kernel is 98% compute-bound, so wall time should track compute cycles closely). I&#x27;d flag this stale-perf-summary issue to whoever maintains the test harness before trusting future `--perf --hw` wall-time numbers in this environment without cross-checking against `--auto-profile`.
-
-[VERSION_RESULT] version=2 file=baseline_matmul_ttl_v2.py baseline_us=275.1 final_us=248.0 speedup_pct=9.9 summary=identified kernel as 98% compute-bound via auto-profile roofline (not DRAM-bound as assumed); W_BATCH halving + w_dfb double-buffering was a no-op (confirmed buffering wasn&#x27;t the bottleneck); widened W_BATCH 4-&gt;8 with K split into two 64-tile halves (elementwise-add accumulate) to double output tiles per matmul call, reducing measured compute cycles ~9.9% (162.06M-&gt;146.09M); note: environment&#x27;s top-level --perf duration/grid summary was found stale/cached (proven via grid=1x1 test), so final_us is estimated from the verified auto-profile compute-cycle delta rather than a fresh top-line wall-clock reading
-</pre></details></td>
-        </tr>
-        <tr>
-          <td>v3</td>
-          <td>baseline_matmul_ttl_v3.py</td>
-          <td>34,656</td>
-          <td>33,872</td>
-          <td>+2.3%</td>
-          <td>-12212.7%</td>
-          <td>redistributed whole output rows non-uniformly across all 56 hardware cores instead of 32 (16 nodes get 3 rows, 40 get 2), preserving v2&#x27;s per-row x-caching DMA pattern; reached hardware core-count ceiling; PERF SUMMARY tool was unreliable (profiler buffer overflow) so used host-side wall-clock timing instead</td>
-          <td><details><summary>raw log</summary><pre>## Summary
-
-**Output file:** `/root/nanoGPT/baseline_matmul_ttl_v3.py`
-
-**Key finding:** The `PERF SUMMARY`/`--auto-profile` &quot;duration&quot; numbers for this kernel were unreliable — profiler DRAM buffers overflowed (&quot;markers were dropped&quot;) given the iteration/core counts involved, and the reported grid/duration lines were misattributed to the wrong dispatched program. I fell back to a clean host-side wall-clock measurement (`time.perf_counter()` + `ttnn.synchronize_device`, averaged over 20 runs after a warm-up call) for a trustworthy, apples-to-apples comparison.
-
-**Bottleneck:** `--auto-profile` roofline data (before the instrumentation broke down) showed the kernel is **98% compute-bound**, not DRAM-bound. Since it&#x27;s compute-bound and embarrassingly parallel across nodes, core utilization is the dominant lever — v2 only used 32 of the 56 available Tensix cores (grid `8x4` vs. hardware&#x27;s `8x7`).
-
-**Changes made:**
-1. *(Regressed — reverted)* Flattened the loop to a global padded index over `grid=(8,7)`. This lost v2&#x27;s per-row `x` caching (row boundaries no longer aligned to iteration count), forcing `x` to be re-read every column-group with no double buffering, serializing DMA with compute. Made things slightly worse.
-2. *(Failed — L1 overflow)* Tried fixing (1) by double-buffering `x_lo`/`x_hi`. Exceeded the real L1 budget (1,395,392 bytes, not the assumed ~1.5MB).
-3. *(Kept)* Redistributed whole **rows** (not flat pairs) across all 56 nodes non-uniformly: 16 nodes get 3 rows, 40 nodes get 2 rows (16×3+40×2=128, exact). This preserves v2&#x27;s efficient per-row `x`-caching DMA pattern while using every core, via two independent `if node_id &lt; EXTRA_ROWS / else` code branches (helper-function factoring isn&#x27;t supported by the DSL&#x27;s tracer — confirmed by a `TypeError: Unhandled capture for vars of type function`).
-
-**Results (host wall-clock, avg of 20 runs, both PASS correctness):**
-- Baseline (v2, 32/56 cores): **34,656.4 us**
-- Final (v3, 56/56 cores): **33,872.2 us**
-- Speedup: **~2.3%**
-
-The gain is modest relative to the theoretical 25% (3-row vs 4-row critical path) or 75% (56 vs 32 cores) because a large, roughly fixed portion of the measured wall time appears to be host/device dispatch and synchronization overhead unrelated to the kernel&#x27;s internal grid size — diminishing returns given hardware is now at its core-count ceiling (56/56, confirmed via `compute_with_storage_grid_size()`).
-
-[VERSION_RESULT] version=3 file=baseline_matmul_ttl_v3.py baseline_us=34656.4 final_us=33872.2 speedup_pct=2.3 summary=redistributed whole output rows non-uniformly across all 56 hardware cores instead of 32 (16 nodes get 3 rows, 40 get 2), preserving v2&#x27;s per-row x-caching DMA pattern; reached hardware core-count ceiling; PERF SUMMARY tool was unreliable (profiler buffer overflow) so used host-side wall-clock timing instead
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v4</td>
-          <td>v4 (no [VERSION_RESULT] line found)</td>
+          <td>v1 (no [VERSION_RESULT] line found)</td>
           <td>N/A</td>
           <td>N/A</td>
           <td>N/A</td>
           <td>N/A</td>
           <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v5</td>
-          <td>v5 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v6</td>
-          <td>v6 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v7</td>
-          <td>v7 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v8</td>
-          <td>v8 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v9</td>
-          <td>v9 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v10</td>
-          <td>v10 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v11</td>
-          <td>v11 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
-</pre></details></td>
-        </tr>
-        <tr class="failed">
-          <td>v12</td>
-          <td>v12 (no [VERSION_RESULT] line found)</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>Run failed or did not complete -- see raw log below</td>
-          <td><details><summary>raw log</summary><pre>You&#x27;ve hit your session limit · resets 5pm (UTC)
+          <td><details><summary>raw log</summary><pre>The specified input file `/root/test_gemm/ttlang/gemm_gull.py` does not exist. The directory only contains:
+- `gemm_full.py`
+- `gemm_multinode.py`
+- `gemm_small.py`
+
+There&#x27;s also a stale log directory (`optimize-logs/20260702_073518/`) referencing `gemm_gull.py` as the intended input, but the file itself was never created there.
+
+Could you confirm which file this should be? If `gemm_gull.py` was meant to be one of the existing files (e.g., `gemm_full.py`), let me know and I&#x27;ll proceed — otherwise please place the intended kernel at that path.
 </pre></details></td>
         </tr></tbody>
   </table>
