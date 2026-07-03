@@ -22,9 +22,9 @@
   <div class="meta">Kernel: /tmp/claude-0/-root/ec376434-2302-4efb-b2f2-df073c95f734/scratchpad/opttest/kernel.py<br>Log dir: /tmp/claude-0/-root/ec376434-2302-4efb-b2f2-df073c95f734/scratchpad/opttest/optimize-logs/20260703_020147</div>
   <div class="chart-box"><svg viewBox="0 0 760 320" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
   <line x1="55" y1="280.0" x2="740" y2="280.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="284.0" font-size="11" fill="#666" text-anchor="end">0%</text><line x1="55" y1="215.0" x2="740" y2="215.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="219.0" font-size="11" fill="#666" text-anchor="end">6%</text><line x1="55" y1="150.0" x2="740" y2="150.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="154.0" font-size="11" fill="#666" text-anchor="end">12%</text><line x1="55" y1="85.0" x2="740" y2="85.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="89.0" font-size="11" fill="#666" text-anchor="end">17%</text><line x1="55" y1="20.0" x2="740" y2="20.0" stroke="#e5e7eb" stroke-width="1"/><text x="47" y="24.0" font-size="11" fill="#666" text-anchor="end">23%</text><line x1="55" y1="280.0" x2="740" y2="280.0" stroke="#9ca3af" stroke-width="1.5"/>
-  <polyline points="55.0,53.9" fill="none" stroke="#2563eb" stroke-width="2.5"/>
-  <circle cx="55.0" cy="53.9" r="4" fill="#2563eb"/>
-  <text x="55.0" y="43.9" font-size="12" fill="#1f2937" text-anchor="middle">20.0%</text><text x="55.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v1</text>
+  <polyline points="55.0,53.9 740.0,53.9" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+  <circle cx="55.0" cy="53.9" r="4" fill="#2563eb"/><circle cx="740.0" cy="53.9" r="4" fill="#2563eb"/>
+  <text x="55.0" y="43.9" font-size="12" fill="#1f2937" text-anchor="middle">20.0%</text><text x="55.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v1</text><text x="740.0" y="43.9" font-size="12" fill="#1f2937" text-anchor="middle">20.0%</text><text x="740.0" y="298.0" font-size="12" fill="#374151" text-anchor="middle">v2</text>
   <text x="55" y="14" font-size="12" fill="#6b7280">Cumulative speedup vs. original baseline (%)</text>
 </svg></div>
   <table>
@@ -44,6 +44,17 @@
           <td>+20.0%</td>
           <td>fake edit</td>
           <td><details><summary>raw log</summary><pre>[VERSION_RESULT] version=1 file=kernel_v1.py baseline_us=100 final_us=80 speedup_pct=20.0 summary=fake edit
+</pre></details></td>
+        </tr>
+        <tr>
+          <td>v2</td>
+          <td>kernel_v2.py</td>
+          <td>100</td>
+          <td>80</td>
+          <td>+20.0%</td>
+          <td>+20.0%</td>
+          <td>fake edit</td>
+          <td><details><summary>raw log</summary><pre>[VERSION_RESULT] version=2 file=kernel_v2.py baseline_us=100 final_us=80 speedup_pct=20.0 summary=fake edit
 </pre></details></td>
         </tr></tbody>
   </table>
